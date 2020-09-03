@@ -1,0 +1,70 @@
+---
+title: "Intro_to_purrr"
+output: html_document
+---
+
+Foundations of Functional Programming with purrr
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in multiple files
+```{r}
+files <- list.files()
+
+map(files, read_csv)
+```
+
+Find the sum of each elemen of the bird_counts sum list
+
+Maybe the object must be a list?
+```{r}
+map(bird_counts, sum)
+```
+
+The function `map` iterates over a list
+
+`map` traditionally outputs a list
+
+This 
+```{r}
+map(survey_data, ~nrow(.x))
+```
+
+This will output a vector of numbers
+```{r}
+map_dbl(survey_data, ~nrow(.x))
+```
+
+This will output a vector of logicals
+```{r}
+map_lgl(survey_data, ~nrow(.x) == 14)
+```
+
+This will outputs a vector of characters - it will pull out the species names from a list
+```{r}
+map_chr(species_names, ~.x)
+```
+
+This will output a data frame
+```{r}
+suvey_rows <- data.frame(names = names(survey_data), rows = NA)
+
+survey_rows$rows <- map_dbl(survey_data, ~nrow(.x))
+
+survey_rows 
+```
+
+This outputs a list with the name of each movie as the list and the length inside the list
+The outputs are the same, but the second is better syntax to use - the .x denotes where the list element goes in the function, when we use ".x" we also have to put a "~" infront of the function
+```{r}
+map(wesanderson, length)
+map(wesanderson, ~length(x))
+```
+
+
+This outputs a dataframe with the number of colors as a column and the rownames as the wesanderson list
+```{r}
+data.frame(numcolors = map_dbl(wesanderson, ~length(.x)))
+```
+
