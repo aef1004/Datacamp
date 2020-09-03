@@ -68,3 +68,66 @@ This outputs a dataframe with the number of colors as a column and the rownames 
 data.frame(numcolors = map_dbl(wesanderson, ~length(.x)))
 ```
 
+# Safely, Possibly, and Walk
+
+Can use the function `safely` to show you where errors occurred - when we pipe it into transpose, it will show where the error occurred, first
+
+Replace anything with an error with NA
+
+```{r}
+list(-10, 1, 10, 0) %>% 
+      map(safely(log, otherwise = NA_real_)) %>%
+    # Transpose the result
+      transpose()
+```
+
+pull out the height element and convert from inches to cm
+
+```{r}
+height_ft <- map(sw_people ,"height") %>% 
+  map(safely(function(x){
+    x * 0.0328084
+  }, quiet = FALSE)) %>% 
+transpose()
+```
+
+replace safely with possibly  - this will out put just the data and not the error messages
+
+
+```{r}
+list(-10, 1, 10, 0) %>% 
+      map(safely(function(x) {
+log(x)
+}
+, otherwise = NA_real_)) 
+```
+
+use walk() to make lists easier to read - removes double bracketing and makes data more compact
+
+
+```{r}
+Short_list <- list(-10, 1, 10)
+
+Short_list
+
+walk(short_list, print)
+```
+
+for plots, you can plot multiple iterations using the map function
+
+
+```{r}
+# Load the gap_split data
+data(gap_split)
+
+# Map over the first 10 elements of gap_split
+plots <- map2(gap_split[1:10], 
+              names(gap_split[1:10]), 
+              ~ ggplot(.x, aes(year, lifeExp)) + 
+                geom_line() +
+                labs(title = "Gap Split"))
+
+# Object name, then function name
+walk(plots, print)
+```
+
