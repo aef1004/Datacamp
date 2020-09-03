@@ -1,0 +1,22 @@
+---
+title: "Text Analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Text Analysis in R
+
+But we want to remove common “stop words” ex. And, the
+The tidytext package has a dataframe that contains a dataframe of the stop words
+```{r}
+library(tidytext)
+
+Df %>%
+unnest_tokens(column_with_text) %>%
+anti_join(stop_words)
+
+```
+
