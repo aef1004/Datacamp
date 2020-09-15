@@ -195,3 +195,120 @@ ggplot(character_data, aes(x = height)) +
   facet_wrap(~ filmtitle)
 ```
 
+
+# Intermediate Functional Programming with purrr
+
+```{r}
+# we can use .x to refer to the first list and .y to refer to the second list
+map2(visits2016, visits2017, ~.x + .y)
+
+# this will do the same as above
+map2(visits2016, visits2017, ~..1 + ..2)
+
+# with more than 2 parameters
+pmap(list, ~..1 + ..2 + ..3)
+```
+
+You can use `as_mapper` to create lambda functions (basically functions that are not named)
+
+```{r}
+# these do the exact same thing, but the second is shorter to write
+round_mean <- function(x) {
+  round(mean(x))
+}
+
+round_mean <- as_mapper(~ round(mean(.x)))
+```
+
+
+Name lists
+```{r}
+month.abb <- c("Jan", "Feb", "Mar")
+
+all_visits <- list(visits2015, visits2016)
+
+map(all_visits, ~set_names(.x, month.abb))
+
+```
+
+Can use the `keep` function to extract elements that satisfy a condition
+
+```{r}
+# which month has received more than3000 visits
+over_3000 <- keep(visits2016, ~sum(.x) > 3000)
+
+names(over_3000)
+
+# or
+
+limits <- as_mapper(~sum(.x) >3000)
+
+over_mapper(visits2016, limit)
+
+names(over_mapper)
+```
+
+or can use `discard` to remove elements that satisfy a condition
+
+Only keep parts that are factors 
+```{r}
+df_list <- list(iris, airquality) %>%
+  map(head)
+
+map(df_list, ~keep(.x, is.factor))
+```
+
+Predicates
+Basically means TRUE/FALSE data
+
+can use `every` function: does every element satisfy a condition?
+
+can use `some` function: do some of the elements satisfy a condition
+```{r}
+every(visits2016, is.numeric)
+# output is TRUE
+
+# is the mean of every month above 1000?
+every(visits2016, ~mean(.x) > 1000)
+# output is FALSE
+
+# is the mean of some of the months above 1000?
+some(visits2016, ~mean(.x) > 1000)
+# output is TRUE
+```
+
+`detect_index` will tell us the first element that satisfies a condition
+
+```{r}
+detect_index(visits2016, ~mean(.x) > 1000)
+```
+
+`detect` will show the actual elements (the values) 
+```{r}
+detect(visits2016, ~mean(.x) > 1000, .right = TRUE)
+```
+
+`has_element` will show if one element has a value of interest
+```{r}
+visits2016_mean <- map(visits2016, mean)
+
+# does one of the means = 981?
+has_element(visits2016_mean, 981)
+# output is: TRUE
+```
+
+
+```{r}
+# Create a threshold variable, set it to 160
+threshold <- 160
+
+# Create a mapper that tests if .x is over the defined threshold
+over_threshold <- as_mapper(~ .x > threshold)
+
+# Are all elements in every all_visits vectors over the defined threshold? 
+map(all_visits, ~ every(.x, over_threshold))
+
+# Are some elements in every all_visits vectors over the defined threshold? 
+map(all_visits, ~ some(.x, over_threshold))
+```
+
