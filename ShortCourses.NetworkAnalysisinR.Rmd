@@ -1,0 +1,962 @@
+---
+title: "Network Analysis in R"
+author: "Michael Ramsey and Jacob Holster"
+date: "March 31, 2021"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+With support from the Center for Research Data and Digital Scholarship
+and the University of Colorado **Boulder**
+
+This document contains an an introduction to object-based coding
+concepts through deploying Structural Equation Models. If you are having
+trouble downloading R and installing your first packages, please view
+the optional check in assessment at
+<https://jayholster.shinyapps.io/RLevel0Assessment/>
+
+Other short courses are available at <https://osf.io/6jb9t/>. Tutorials
+and optional assessments are linked below:
+
+R Level Zero: <https://jayholster.shinyapps.io/RLevel0Assessment/>
+
+Introduction to R: <https://jayholster.shinyapps.io/IntrotoRAssessment/>
+
+Data Visualization:
+<https://jayholster.shinyapps.io/DataVisualizationAssessment/>
+
+Statistical Analysis:
+<https://jayholster.shinyapps.io/StatsinRAssessment/>
+
+Text Analysis:
+<https://jayholster.shinyapps.io/TextanalysisinRAssessment/>
+
+Structural Equation Modeling in R:
+<https://jayholster1.shinyapps.io/SEMinRAssessment/>
+
+Network Analysis in R:
+<https://jayholster1.shinyapps.io/NetworksinRAssessment/>
+
+This is an R Markdown document (.Rmd for file extensions). R Markdown is
+a simple formatting syntax for authoring HTML, PDF, and MS Word
+documents that can include blocks of code, as well as space for
+narrative to describe the code. For more details on using R Markdown see
+<http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that
+includes both content as well as the output of any embedded R code
+chunks within the document. You can quickly insert chunks into your R
+Markdown file with the keyboard shortcut Cmd + Option + I (Windows Ctrl
++ Alt + I).
+
+```{r}
+
+```
+
+RStudio is an integrated development environment (IDE) which enables
+users to efficiently access and view most facets of the program in a
+four pane environment. These include the source, console, environment
+and history, as well as the files, plots, packages and help. The console
+is in the lower-left corner, and this is where commands are entered and
+output is printed. The source pane is in the upper-left corner, and is a
+built in text editor. While the console is where commands are entered,
+the source pane includes executable code which communicates with the
+console. The environment tab, in the upper-right corner displays an list
+of loaded R objects. The history tab tracks the user's keystrokes
+entered into the console. Tabs to view plots, packages, help, and output
+viewer tabs are in the lower-right corner.
+
+### Using R Markdown in RStudio
+
+-   Use R markdown documents for flexibility with the output.
+-   Insert narrative in your document in a way that makes sense to you.
+-   Split your code up into chunks
+-   Use a project specific directory
+-   Save your work frequently.
+
+# Network Analysis
+
+"Networks enable the visualization of complex, multidimensional data as
+well as provide diverse statistical indices for interpreting the
+resultant graphs" (Jones, Mair, & McNally, 2018). Put otherwise, network
+analysis is a collection of techniques that visualize and estimate
+relationships among agents in a social context. Furthermore, network
+analysis is used "to analyze the social structures that emerge from the
+recurrence of these relations" where "[the] basic assumption is that
+better explanations of social phenomena are yielded by analysis of the
+relations among entities" (Science Direct; Linked Below).
+
+See this link:
+[[https://www.sciencedirect.com/topics/social-sciences/network-analysis\#:\~:text=Network%20analysis%20(NA)%20is%20a,of%20the%20relations%20among%20entities](https://www.sciencedirect.com/topics/social-sciences/network-analysis\#:\~:text=Network%20analysis%20(NA)%20is%20a,of%20the%20relations%20among%20entities)](https://www.sciencedirect.com/topics/social-sciences/network-analysis#:~:text=Network%20analysis%20(NA)%20is%20a,of%20the%20relations%20among%20entities){.uri}
+for a set of journals and books on the topic).
+
+#### Agenda
+
+-   **Introductory Case Study**
+-   **Creating Networks from Data**
+-   **Visualizing Networks**
+-   **Network Simulation**
+-   **Community Detection**
+-   **Advanced Case Study**
+-   **Datasets for Network Analysis**
+-   **Assessment**
+-   **References**
+
+#### Set Your Working Directory
+
+When you first use R follow this procedure for Windows and MAC OSX
+create a sub-directory (folder), "R" for example, in your "Documents"
+folder. This sub-folder, also known as working directory, will be used
+by R to read and save files. Think of it as a downloads folder for R
+only.
+
+You can specify your working directory to R in a few ways. Click the
+session at the top of your screen and choose your directory. It might
+also be useful to change the directory using coding. To do this, use the
+function 'setwd', and then enter the location of your directory, as I
+have below. RStudio will assume the files you call are in this folder.
+
+```{r workingdirectory}
+setwd('/Users/jacob/jdata/R/R Series/network')
+```
+
+## Zacharies Karate Club Case Study
+
+We will be working with a dataset called Zacharies Karate Club, a
+seminal dataset in network analysis. First we need to install the
+relevant packages. Today we will need a package called "igraph", a
+package useful for creating, analyzing, and visualizing networks. If you
+do not have the packages already, install the tidyverse, igraph,
+ggnetwork, and intergraph. igraph helps us perform network analysis.
+ggnetwork and intergraph are both packages used for plotting networks in
+the ggplot framework.
+
+```{r echo = TRUE, message = F, warning = F}
+# Load the libraries
+library(tidyverse)
+library(igraph)
+library(ggnetwork)
+library(intergraph)
+```
+
+Zacharies Karate Club has quite an interesting history. Taken from
+wikipedia:
+
+"A social network of a karate club was studied by Wayne W. Zachary for a
+period of three years from 1970 to 1972. The network captures 34 members
+of a karate club, documenting pairwise links between members who
+interacted outside the club. During the study a conflict arose between
+the administrator "John A" and instructor "Mr. Hi" (pseudonyms), which
+led to the split of the club into two. Half of the members formed a new
+club around Mr. Hi; members from the other part found a new instructor
+or gave up karate. Based on collected data Zachary correctly assigned
+all but one member of the club to the groups they actually joined after
+the split. Zachary correctly predicted each member's decision except
+member \#9, who went with Mr. Hi instead of John A." In this case study,
+we will try to infer/predict the group splits with network analysis
+techniques.
+
+#### Load Data and Extract Model Features
+
+Now it's time to extract the relevant information that we need from the
+dataset. We need the associations between members (edges), the groupings
+after the split of the network, and the labels of the nodes.
+
+```{r echo = TRUE, message = F, warning = F}
+# Load and view the data
+members <- read.csv("Zacharies_Karate_Club.csv")
+edges <- read.csv("Zacharies_Karate_Club_edges.csv")
+
+# Extract information for nodes
+nodes <- members$node
+
+# Extract information on edges
+edges <- as.vector(rbind(edges$From, edges$To))
+```
+
+Extract the groups and labels of the vertices and store them in vectors.
+Hint: When you extract the labels of the vertices, they will be
+recognized as factors. We need the labels to be represented by
+characters. How can we force this?
+
+```{r echo = F, message = F, warning = F}
+# Extract the labels and groups
+people <- as.character(members$label)
+groups <- members$group
+```
+
+#### Creating Networks From Data
+
+Now that we have extracted the relevant data that we need, let's
+construct a network of Zacharies Karate club.
+
+```{r echo = TRUE, message = F, warning = F}
+# Create our network
+# Note that this will automatically enumerate the nodes (eg. 1, 2, 3, ...)
+G <- make_empty_graph(n = length(nodes), directed = F) %>%
+  add_edges(edges) 
+```
+
+We can also create vertex attributes. Let's make a vertex attribute for
+each group (Mr. Hi and John A).
+
+```{r echo = TRUE, message = F, warning = F, eval = T}
+# Create a vertex attribute
+G <- G %>%
+  igraph::set.vertex.attribute('group', index = V(G), value = groups)
+```
+
+Create a vertex attribute for node label. Call the attribute 'label'.
+
+```{r echo = F, message = F, warning = F, eval = T}
+# Create a vertex attribute
+G <- G %>%
+  igraph::set.vertex.attribute('label', index = V(G), value = people)
+```
+
+#### Visualizing Networks with baseR
+
+Now visualize the network by running the plot function on our network
+'G'.
+
+```{r echo = TRUE, message = F, warning = F}
+# Plot igraph object
+plot(G)
+```
+
+Let's change some of the plot aesthetics. We can change the vertex
+colors, edge colors, vertex sizes, etc. Play around with the arguments
+for plotting a network.
+
+```{r echo = TRUE, message = F, warning = F}
+# Edit baseR plot aesthetics
+plot(G, vertex.color="green",  # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 10,         # Changes vertex size
+     vertex.shape = 'circle',  # Changes vertex shape
+     asp = 0,                  # Spread out nodes
+     layout = layout_in_circle)# Format nodes in a circle
+```
+
+We can also change the color of our vertices according to group.
+
+```{r echo = TRUE, message = F, warning = F}
+plot(G, vertex.color = groups, # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 10,         # Changes vertex size
+     vertex.shape = 'square',  # Changes vertex shape
+     asp = 0)                  # Spread out node)
+```
+
+#### Visualizing Networks with ggnetwork
+
+You can also use ggplot to visualize igraph objects.
+
+```{r echo = TRUE, message = F, warning = F}
+# Plot igraph object with ggplot
+ggplot(G, aes(x = x, y = y, xend = xend, yend = yend)) + # Do not change
+  geom_edges() +
+  geom_nodes()
+```
+
+Let's see if we can make our last plot look better.
+
+```{r echo = TRUE, message = F, warning = F}
+# Plot igraph object with ggplot 
+ggplot(G, aes(x = x, y = y, xend = xend, yend = yend)) +      # Do not change
+  geom_edges(color = 'grey', size = 1, linetype = 'dashed') + # Alter edge attributes
+  geom_nodes(size = 10, color = 'red', shape = 'square') +    # Alter node attributes
+  geom_nodetext(label = people, fontface = "bold") +          # Add text to nodes
+  theme_blank()                                               # Remove grid
+```
+
+Using ggnetwork and ggplot, color or shape the nodes by karate group.
+Also make some other plot aesthetic changes to your liking.
+
+```{r echo = F, message = F, warning = F, eval = F}
+ggplot(G, aes(x = x, y = y, xend = xend, yend = yend)) +      # Do not change
+  geom_edges(color = 'grey', size = 1, linetype = 'dashed') + # Alter edge attributes
+  geom_nodes(aes(color = as.factor(group)), 
+             size = 10, shape = 'square') +                   # Alter node attributes
+  geom_nodetext(label = people, fontface = "bold") +          # Add text to nodes
+  theme_blank() +                                             # Remove grid
+  scale_color_discrete(name = 'Group',                        # Edit legend
+                       label= c('Mr. Hi','John A.'))
+```
+
+#### Measures of Centrality
+
+Measures of Centrality provide a measure about how important a node is.
+There are four major measures of centrality that we will cover.
+
+-   **Degree Centrality**: The degree of a node is defined as the number
+    of other nodes that we are connected to. Important nodes tend to
+    have the most connections to other nodes, or a high degree
+    centrality.
+
+-   **Eigenvector Centrality**: Why just stop at measuring importance
+    based on your own number of friends. The extent to which connect
+    nodes are connected themselves also indicate importance (e.g. If
+    your friends also have alot of connections, in a way, this makes you
+    even more important within the network).
+
+-   **Closeness centrality**: Closeness centrality measures how many
+    steps are required to access every other vertex from a given vertex.
+    In other words, the important nodes are the ones where you can get
+    to everybody quickly.
+
+-   **Betweenness Centrality**: This ranks the nodes based on the flow
+    of information. The more important nodes are the ones that you have
+    to travel across many times to get to other nodes.
+
+```{r}
+knitr::include_graphics('network/Centrality.png')
+```
+
+```{r echo = TRUE, message = F, warning = F}
+# Compute the degree centrality for our graph G. 
+degr_cent <- centr_degree(G, mode = 'all')
+degr_cent <- degr_cent$res
+
+# Compute the eigenvector centrality of our network
+eign_cent <- eigen_centrality(G)
+eign_cent <- eign_cent$vector
+
+# Compute the closeness centraility
+clos_cent <- igraph::closeness(G)
+
+# Compute betweeness centrality
+betw_cent <- igraph::betweenness(G)
+
+```
+
+Finally, Let's put all of the centrality measures in one table so that
+we can compare the outputs.
+
+```{r echo = TRUE, message = F, warning = F}
+# Create data frame storing all of the measures of centrality
+data <- data.frame(vertex = nodes,
+                   label = people,
+                   degree = degr_cent, 
+                   eigen = eign_cent, 
+                   closeness = clos_cent, 
+                   betweeness = betw_cent)
+
+# Order the data by degree centrality
+data <- data %>% arrange(desc(degree))
+
+# View the head of the data frame
+head(data)
+```
+
+It makes sense that the most connected members of the network are indeed
+John A. and Mr. Hi. We can view the centrality measures from the
+perspective of the graph. Here, we add the object degr_cent to the
+vertex size to display the nodes via their degree centrality using
+baseR.
+
+```{r echo = TRUE, message = F, warning = F}
+# Plot ZKC with igraph
+plot(G,                            # Plot igraph object
+     vertex.color = groups,        # Change vertex colors
+     edge.color = 'black',         # Change edge color
+     vertex.size = 10+degr_cent,   # Change node size
+     vertex.shape = 'circle',      # Specify node shape
+     asp = 0,                      # Spreads out nodes
+     layout=layout_with_lgl)       # Specify layout
+```
+
+Now, using the tidyverse! Change the code below to make a graph of our
+network where node sizes are scaled by the closeness centrality.
+
+```{r echo = T, message = F, warning = F}
+ggplot(G, aes(x = x, y = y, xend = xend, yend = yend)) +      # Do not change
+  geom_edges(color = 'grey', size = 1, linetype = 'dashed') + # Alter edge attributes
+  geom_nodes(aes(color = as.factor(group)), 
+             size = 10+degr_cent, 
+             shape = 'circle') +                              # Alter node attributes
+  geom_nodetext(label = people, fontface = "bold") +          # Add text to nodes
+  theme_blank() +                                             # Remove grid
+  scale_color_discrete(name = 'Group',                        # Edit legend
+                       label= c('Mr. Hi','John A.'))
+```
+
+#### Modularity
+
+Modularity is a measure that describes the extent to which community
+structure is present within a network when the groups are labeled. A
+modularity score close to 1 indicates the presence of strong community
+structure in the network. In other words, nodes in the same group are
+more likely to be connected than nodes in different groups. A modularity
+score close to -1 indicates that we have the opposite of community
+structure. In other words, nodes in different groups are more likely to
+be connected than nodes in the same group. A modularity score close to 0
+indicates that no community structure (or anti-community structure) is
+present in the network.
+
+```{r}
+knitr::include_graphics('network/Modularity.jpg')
+```
+
+```{r}
+knitr::include_graphics('network/Algorithm.jpg')
+```
+
+Compute the modularity of the Zacharies Karate Club network using the
+modularity() function.
+
+```{r echo = F, message = F, warning = F}
+ZCCmod <- modularity(G, groups)
+ZCCmod
+```
+
+Higher modularity scores are better, however, modularity should not be
+used alone to assess the presence of communities in network. Rather,
+multiple measures should be used to provide an argument for community in
+a network.
+
+## Network Simulation
+
+We want to model a new network with no data. Using our model, we want to
+find out if our network is actually interesting, or if we can explain
+the network simply via randomness. If you are familiar with hypothesis
+testing, we can view these random networks as our "null models". We
+assume that our null model is true, until there is enough evidence to
+suggest that our null model does not describe the real-life network. If
+our null-model is a good fit, then we have achieved a good
+representation of our network. If we don't have a good fit, then there
+is likely additional structure in the network that is unaccounted for.
+
+**Our Question: How can we explain the group structure of our network?
+Is it random or can we explain it via the degree sequence?**
+
+## Random Network Generation
+
+Erdos-Renyi random networks in R require that we specify a number of
+nodes $n$, and an edge construction probability $p$. Essentially, for
+every pair of nodes, we flip a biased coin with the probability of
+"heads" being $p$. If we get a "heads", then we draw an edge between
+that pair of nodes. This process simulates the social connections rather
+than plotting them from a dataset.
+
+```{r echo = TRUE, message = F, warning = F}
+# Simulate an erdos-renyi random network and display the result
+ER <- sample_gnp(n = length(nodes), p = .15, directed = FALSE, loops = FALSE)
+
+# Plot the erdos-renyi random network
+ggplot(ER, aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_edges(color = 'black', size = 0) + 
+  geom_nodes(color = 'purple', 
+             size = 10, 
+             shape = 'circle') +       
+  theme_blank() 
+```
+
+Is the erdos-renyi random network a good representative model of the
+Zacharies Karate Club Network? Let's construct the erdos-renyi random
+network that is most similar to our network.
+
+We can map in parameters in the Erdo-Renyi random graph by specifying
+the number of nodes and the edge connection probability p. Considering
+the Zacharies Karate Club Network, we want to use 34 nodes in our graph.
+If we change the number of nodes, then we lose the ability to compare
+our network with the theoretical model. We can estimate a p value using
+the mean of degr_cent over the length of the nodes - 1.
+
+```{r echo = TRUE, message = F, warning = F}
+
+# Estimate parameter p for ZCC
+pval <- mean(degr_cent)/(length(nodes)-1)
+
+# Simulate an erdos-renyi random network and display the result
+ER <- sample_gnp(n = length(nodes), 
+                 p = pval, 
+                 directed = FALSE, 
+                 loops = FALSE)
+
+# Plot the erdos-renyi random network
+ggplot(ER, aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_edges(color = 'black', size = 1) + 
+  geom_nodes(color = 'purple', 
+             size = 10, 
+             shape = 'circle') +                              
+  geom_nodetext(label = people, fontface = "bold") +          
+  theme_blank() 
+```
+
+Let's check out the degree distribution for our random graph and the
+actual ZCC graph.
+
+```{r echo = TRUE, message = F, warning = F}
+
+# Compute degree centrality of ER Model
+degr_ER <- centr_degree(ER, mode = 'all')$res
+
+# Construct data frame for centrality
+centr_compar <- data.frame(Nodes = nodes,
+                           ZKC = degr_cent,
+                           ER = degr_ER)
+
+# Reformat data frame to tidy
+centr_compar <- centr_compar %>%
+  gather(key = 'Graph', value = 'Centrality', ZKC, ER)
+
+# Create a bar plot of degree distributions
+ggplot(data = centr_compar, aes(x = Centrality, fill = Graph)) +
+  geom_bar(alpha = .5, position = 'identity') +
+  ggtitle('Comparison of ZKC to ER random graph instance')
+```
+
+#### Configuration Model
+
+For this kind of random-graph model, we specify the exact degree
+sequence of all the nodes. We then construct a random graph that has the
+exact degree sequence as the one given. Let's perform an example.
+
+```{r echo = TRUE, message = F, warning = F}
+# Simulate a configuration model
+# Note: The method simple.no.multiple prevents self loops and multiple edges
+config <- sample_degseq(degr_cent, method = "simple.no.multiple")
+
+# Plot the configuration model
+ggplot(config, aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_edges(color = 'black', size = 1) + 
+  geom_nodes(color = 'purple', 
+             size = 10, 
+             shape = 'circle') +                              
+  geom_nodetext(label = people, fontface = "bold") +          
+  theme_blank() 
+```
+
+Is the configuration model random network a good representative model of
+the Zacharies Karate Club Network?
+
+Let's see if the configuration model captures the group structure of the
+model. We are going to perform a permutation test in which we generate
+1000 different configuration models (with the same degree sequence as
+ZKC), and then estimate how the actual value of the ZKC modularity lines
+up with the distribution of configuration model modularities.
+
+```{r echo = TRUE, message = F, warning = F}
+
+# Initialize vector to store values
+sims <- 1000
+mod_vals <- rep(0,sims)
+
+# Loop through simulations
+for (i in c(1:sims))
+{
+  # Simulate a configuration model
+  config <- sample_degseq(degr_cent, method = "simple.no.multiple")
+  
+  # Compute the modularity of the network w/ respect to ZKC groups
+  mod_score <- modularity(config, groups)
+  
+  # Store the modularity value in our vector
+  mod_vals[i] <- mod_score
+  
+}
+```
+
+Now let's plot a histogram of these values, with a vertical line
+representing the modularity of ZKC network that we computed earlier.
+This value is stored in the object 'ZCCmod'.
+
+```{r echo = TRUE, message = F, warning = F}
+# Plot a histogram modularity values
+ggplot(data = as.data.frame(mod_vals), aes(x = mod_vals)) + 
+  geom_histogram(bins = 10, color = 'black', fill = 'blue') +
+  geom_vline(xintercept = ZCCmod, color = 'purple')
+```
+
+We can see from the above that our computed modularity is extremely
+improbable. We can even compute a p-value, which describes the
+probability that we see a modularity value greater than or equal to the
+one that we saw.
+
+```{r echo = TRUE, message = F, warning = F}
+# Compute a p-value
+summary(mod_vals)
+```
+
+No simulations had a modularity that was as high as the one in ZKC. This
+tells us that the particular degree sequence of ZKC does not capture the
+community structure. Put otherwise, the configuration model does a bad
+job at this.
+
+#### Stochastic Block Model
+
+Stochastic Block models are similar to the Erdos-Renyi random network
+with the ability to specify additional parameters. The stochastic block
+model adds a group structure into the random graph model. We can specify
+the group sizes and the edge construction probability for within groups
+and between groups.
+
+```{r echo = TRUE, message = F, warning = F}
+# Construct the edge probability matrix and block sizes
+pref.matrix = matrix(c(.5, .05, .05, .5), nrow = 2, ncol = 2)
+block.sizes = c(18,34-18)
+
+# Simulate a stochastic block model
+mySBM <- sample_sbm(n = length(nodes), pref.matrix, block.sizes, directed = FALSE, loops = FALSE)
+
+# Plot the SBM
+ggplot(mySBM, aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_edges(color = 'black', size = .5) + 
+  geom_nodes(color = 'purple', 
+             size = 10, 
+             shape = 'circle') +                              
+  geom_nodetext(label = people, fontface = "bold") +          
+  theme_blank() 
+```
+
+Is the stochastic block model a good representative model of the
+Zacharies Karate Club Network?
+
+Estimation of parameters for the SBM and interpretation.
+
+## Community Detection
+
+Suppose we no longer have the group labels, but we want to infer the
+existence of groups in our network. This process is known as community
+detection. There are many different ways to infer the existence of
+groups in a network.
+
+#### Via Modularity Maximization
+
+The goal here is to find the groupings of nodes that lead to the highest
+possible modularity score. With this algorithm, we are not guaranteed to
+find the optimal grouping, we may only find a sub-optimal one.
+
+```{r echo = TRUE, message = F, warning = F}
+# Find communites using the modularity maximization algorithm
+mod_groups <- cluster_fast_greedy(G)
+mod_groups <- mod_groups$membership
+
+# Plot the computed modularity groupings
+par(mfrow=c(1,2))
+plot(G, vertex.color = mod_groups, # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 20,         # Changes vertex size
+     vertex.shape = 'circle',  # Changes vertex shape
+     asp = 0,
+     layout = layout_in_circle,
+     main = 'Algorithm')
+
+# Plot the actual modularity groupings
+plot(G, vertex.color = groups, # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 20,         # Changes vertex size
+     vertex.shape = 'circle',  # Changes vertex shape
+     asp = 0,
+     layout = layout_in_circle, 
+     main = 'Actual')
+```
+
+It turn out that the modularity maximization algorithm finds 3
+communities within the Zacharies Karate Club network. But, if we merge
+those two groups into two, only one node is incorrectly grouped. Let's
+try another community detection algorithm.
+
+#### Via Edge Betweenness
+
+Edge betweenness community structure detection is based on the following
+assumption; that edges connecting separate groupings have high edge
+betweenness as all the shortest paths from one module to another must
+traverse through them. Practically this means that if we gradually
+remove the edge with the highest edge betweenness score, our network
+will separate into communities.
+
+```{r echo = TRUE, message = F, warning = F}
+# Find communites using the edge betweeness algorithm
+btw_groups <- cluster_edge_betweenness(G)
+btw_groups <- btw_groups$membership
+
+# Plot the computed betweeness groupings
+par(mfrow=c(1,2))
+plot(G, vertex.color = btw_groups, # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 20,         # Changes vertex size
+     vertex.shape = 'circle',  # Changes vertex shape
+     asp = 0,
+     layout = layout_in_circle,
+     main = 'Algorithm')
+
+# Plot the actual modularity groupings
+plot(G, vertex.color = groups, # Changes node color
+     edge.color = 'black',     # Changes edge color
+     vertex.size = 20,         # Changes vertex size
+     vertex.shape = 'circle',  # Changes vertex shape
+     asp = 0,
+     layout = layout_in_circle, 
+     main = 'Actual')
+```
+
+## Advanced Case Study
+
+See this link
+(<https://www.frontiersin.org/articles/10.3389/fpsyg.2018.01742/>) to
+access a paper by Jones, Mair, & McNally (2018), all professors at
+Harvard University in the Department of Psychology who discuss
+visualizing psychological networks in R.
+
+See this link
+(<https://www.frontiersin.org/articles/10.3389/fpsyg.2018.01742/full#supplementary-material>)
+to access all supplementary material, including the relevant datasets
+needed for the code below.
+
+Read the paper and run the code alongside the narrative to get the most
+out of this set of case studies. For a brief overview of the paper see
+this abstract:
+
+"Networks have emerged as a popular method for studying mental
+disorders. Psychopathology networks consist of aspects (e.g., symptoms)
+of mental disorders (nodes) and the connections between those aspects
+(edges). Unfortunately, the visual presentation of networks can
+occasionally be misleading. For instance, researchers may be tempted to
+conclude that nodes that appear close together are highly related, and
+that nodes that are far apart are less related. Yet this is not always
+the case. In networks plotted with force-directed algorithms, the most
+popular approach, the spatial arrangement of nodes is not easily
+interpretable. However, other plotting approaches can render node
+positioning interpretable. We provide a brief tutorial on several
+methods including multidimensional scaling, principal components
+plotting, and eigenmodel networks. We compare the strengths and
+weaknesses of each method, noting how to properly interpret each type of
+plotting approach."
+
+```{r}
+## Package installations are included here for convenience
+install.packages("MPsychoR")
+install.packages("qgraph")
+install.packages("smacof")
+install.packages("wordcloud")
+install.packages("psych")
+install.packages("eigenmodel")
+install.packages("networktools")
+
+## Note: The following R code is identical to code found in the manuscript
+
+library("MPsychoR")
+data(Rogers)
+dim(Rogers)
+
+data(Rogers_Adolescent)
+dim(Rogers_Adolescent)
+
+colnames(Rogers) <- colnames(Rogers_Adolescent) <- 1:26
+
+library("qgraph")
+adult_zeroorder <- cor(Rogers)
+qgraph(adult_zeroorder, layout="spring",
+       groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"))
+
+adult_zeroorder <- cor(Rogers)
+
+library("smacof")
+dissimilarity_adult <- sim2diss(adult_zeroorder)
+
+adult_MDS <- mds(dissimilarity_adult)
+head(round(adult_MDS$conf, 2)) # top of configuration matrix
+
+adult_MDS_ordinal <- mds(dissimilarity_adult, type="ordinal")
+plot(adult_MDS_ordinal, plot.type = "Shepard", main="Ordinal")
+text(1.1,0.3, paste("Stress =", round(adult_MDS_ordinal$stress,2))) 
+
+adult_MDS_ratio <- mds(dissimilarity_adult, type="ratio")
+plot(adult_MDS_ratio, plot.type = "Shepard", main="Ratio")
+text(1.1,0.3, paste("Stress =", round(adult_MDS_ratio$stress,2))) 
+
+adult_MDS_interval <- mds(dissimilarity_adult, type="interval")
+plot(adult_MDS_interval, plot.type = "Shepard", main="Interval")
+text(1.1,0.3, paste("Stress =", round(adult_MDS_interval$stress,2))) 
+
+adult_MDS_mspline <- mds(dissimilarity_adult, type="mspline")
+plot(adult_MDS_mspline, plot.type = "Shepard", main="Spline")
+text(1.1,0.3, paste("Stress =", round(adult_MDS_mspline$stress,2)))
+
+adult_MDS_mspline$stress
+
+qgraph(adult_zeroorder, layout=adult_MDS_mspline$conf, 
+       groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"), vsize=4)
+text(-1,-1, paste("Stress=", round(adult_MDS_mspline$stress,2)))
+
+library("wordcloud")
+qgraph(adult_zeroorder, layout=adult_MDS_mspline$conf, 
+       groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"),
+       vsize=0, rescale=FALSE, labels=FALSE)
+points(adult_MDS_mspline$conf, pch=16)
+textplot(adult_MDS_mspline$conf[,1]+.03,
+         adult_MDS_mspline$conf[,2]+.03,
+         colnames(adult_zeroorder),
+         new=F)
+
+adult_glasso <- EBICglasso(cor(Rogers), n=408)
+qgraph(adult_glasso, layout=adult_MDS_mspline$conf, 
+       groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"), vsize=4)
+text(-1,-1, paste("Stress=", round(adult_MDS_mspline$stress,2))) 
+
+adolescent_zeroorder <- cor(Rogers_Adolescent)
+dissimilarity_adolescent <- sim2diss(adolescent_zeroorder)
+adolescent_MDS <- mds(dissimilarity_adolescent, type="mspline")
+
+fit_procrustes <- Procrustes(adult_MDS_mspline$conf, adolescent_MDS$conf)
+
+adolescent_glasso <- EBICglasso(cor(Rogers_Adolescent), n=87, gamma=0)
+
+qgraph(adult_glasso, layout=fit_procrustes$X, groups = list(Depression = 1:16, "OCD" = 17:26),
+       color = c("lightblue", "lightsalmon"), title= "Adults, n=408", vsize=4)
+text(-1,-1, paste("Stress=", round(adult_MDS_mspline$stress,2)))
+qgraph(adolescent_glasso, layout=fit_procrustes$Yhat, 
+       groups = list(Depression = 1:16, "OCD" = 17:26),
+       color = c("lightblue", "lightsalmon"), title="Adolescents, n=87", vsize=4)
+text(-1,-1, paste("Stress=", round(adolescent_MDS$stress,2)))
+
+round(fit_procrustes$congcoef, 3)
+
+library("psych")
+PCA_adult <- principal(cor(Rogers), nfactors = 2)
+qgraph(adult_glasso, layout=PCA_adult$loadings, groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"), title= "Adults, n=408", layoutOffset=c(.3,.1), vsize=4)
+
+text(1.5,-.8, paste("% var=", round(sum(PCA_adult$values[1:2]/length(PCA_adult$values)),2)))
+title(xlab="Component 1", ylab= "Component 2")
+
+library("eigenmodel")
+
+diag(adult_glasso) <- NA   ## the function needs NA diagonals
+p <- 2               		## 2-dimensional solution
+fitEM <- eigenmodel_mcmc(Y = adult_glasso, R = p, S = 1000, burn = 200, seed = 123)
+EVD <- eigen(fitEM$ULU_postmean) 
+evecs <- EVD$vec[, 1:p]      ## eigenvectors (coordinates)
+
+qgraph(adult_glasso, layout=evecs, groups = list(Depression = 1:16, "OCD" = 17:26), 
+       color = c("lightblue", "lightsalmon"), title= "Adults, n=408", vsize=4)
+title(xlab="Dimension 1", ylab= "Dimension 2")
+
+library("networktools")
+adult_glasso <- EBICglasso(cor(Rogers), n=408)
+adult_qgraph <- qgraph(adult_glasso)
+MDSnet(adult_qgraph, MDSadj=cor(Rogers))
+PCAnet(adult_qgraph, cormat = cor(Rogers))
+EIGENnet(adult_qgraph)
+
+```
+
+## Datasets for Network Analysis
+
+There is a package called "igraphdata" that contains many network
+datasets. Additionally, there are several more datasets at "The Colorado
+Index of Complex Networks (ICON)". Here is the link:
+<https://icon.colorado.edu/#!/>
+
+## Assessment
+
+There is a practice assessment to go along with this session, and a
+graded assessment that counts toward badges and a certificate in R
+granted by LISA. For more information, visit the link
+<https://jayholster1.shinyapps.io/NetworksinRAssessment/>.
+
+## References
+
+CRDDS: Consult hours: Tuesdays 12-1 and Thursdays 1-2 Events:
+<http://www.colorado.edu/crdds/events> Listserv:
+<https://lists.colorado.edu/sympa/subscribe/crdds-news> OSF:
+<https://osf.io/36mj4/>
+
+Laboratory for Interdisciplinary Statistical Analysis (LISA):
+<http://www.colorado.edu/lab/lisa/resources>
+
+#### Network Analysis Resources
+
+CRAN page for igraph
+<https://cran.r-project.org/web/packages/igraph/igraph.pdf>
+
+igraph tutorial
+<http://www.kateto.net/wp-content/uploads/2016/01/NetSciX_2016_Workshop.pdf>
+
+igraph manual pages <http://igraph.org/r/doc/>
+
+Plotting networks with baseR <http://igraph.org/r/doc/plot.common.html>
+
+Plotting networks with ggplot <http://igraph.org/r/doc/plot.common.html>
+
+#### Other Resources
+
+dyplyr cheat sheet - data wrangling
+<https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf>
+
+Data Visualization Resources
+
+ggplot cheat sheet
+<https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf>
+
+qplots
+<http://www.sthda.com/english/wiki/qplot-quick-plot-with-ggplot2-r-software-and-data-visualization>
+
+Histograms/Density plots
+<http://www.sthda.com/english/wiki/ggplot2-histogram-plot-quick-start-guide-r-software-and-data-visualization>
+
+Boxplots/Violin plots
+<http://www.sthda.com/english/wiki/ggplot2-box-plot-quick-start-guide-r-software-and-data-visualization>
+
+Scatter plots
+<http://www.sthda.com/english/wiki/ggplot2-scatter-plots-quick-start-guide-r-software-and-data-visualization>
+
+R Markdown Cheatsheet
+<https://rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf>
+
+Data Carpentry
+<http://www.datacarpentry.org/R-genomics/01-intro-to-R.html>
+
+R manuals by CRAN <https://cran.r-project.org/manuals.html>
+
+Basic Reference Card
+<https://cran.r-project.org/doc/contrib/Short-refcard.pdf>
+
+R for Beginners (Emmanuel Paradis)
+<https://cran.r-project.org/doc/contrib/Paradis-rdebuts_en.pdf>
+
+The R Guide (W. J. Owen)
+<https://cran.r-project.org/doc/contrib/Owen-TheRGuide.pdf>
+
+An Introduction to R (Longhow Lam)
+<https://cran.r-project.org/doc/contrib/Lam-IntroductionToR_LHL.pdf>
+
+Cookbook for R <http://www.cookbook-r.com/>
+
+Advanced R (Hadley Wickham) <http://adv-r.had.co.nz/>
+
+rseek: search most online R documentation and discussion forums
+<http://rseek.org/>
+
+The R Inferno: useful for trouble shooting errors
+<http://www.burns-stat.com/documents/books/the-r-inferno/>
+
+Google: endless blogs, posted Q & A, tutorials, references guides where
+you're often directed to sites such as Stackoverflow, Crossvalidated,
+and the R-help mailing list.
+
+YouTube R channel <https://www.youtube.com/user/TheLearnR>
+
+R Programming in Coursera <https://www.coursera.org/learn/r-programming>
+
+Various R videos
+<http://jeromyanglim.blogspot.co.uk/2010/05/videos-on-data-analysis-with-r.html>
+
+R for Data Science - Book <http://r4ds.had.co.nz>
+
+Base R cheat sheet
+<https://www.rstudio.com/wp-content/uploads/2016/05/base-r.pdf>
+
+dyplyr cheat sheet - data wrangling
+<https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf>
+
+ggplot cheat sheet - data visualization
+<https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf>
