@@ -3,13 +3,6 @@ title: "Intro_to_purrr"
 output: html_document
 ---
 
-Date plated - for part of saving name -
-    How many groups do you have - 4
-How many mice do you have in each group - 
-
-Py2app
-Write in python
-
 
 
 Foundations of Functional Programming with purrr
