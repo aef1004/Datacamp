@@ -3,6 +3,15 @@ title: "Intro_to_purrr"
 output: html_document
 ---
 
+Date plated - for part of saving name -
+    How many groups do you have - 4
+How many mice do you have in each group - 
+
+Py2app
+Write in python
+
+
+
 Foundations of Functional Programming with purrr
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -231,7 +240,7 @@ map(all_visits, ~set_names(.x, month.abb))
 
 ```
 
-Can use the `keep` function to extract elements that satisfy a condition
+Can use the `keep` function to extract elements that satisfy a condition (with a TRUE/FALSE)
 
 ```{r}
 # which month has received more than3000 visits
