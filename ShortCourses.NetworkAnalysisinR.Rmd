@@ -118,9 +118,6 @@ also be useful to change the directory using coding. To do this, use the
 function 'setwd', and then enter the location of your directory, as I
 have below. RStudio will assume the files you call are in this folder.
 
-```{r workingdirectory}
-setwd('/Users/jacob/jdata/R/R Series/network')
-```
 
 ## Zacharies Karate Club Case Study
 
@@ -166,8 +163,8 @@ after the split of the network, and the labels of the nodes.
 
 ```{r echo = TRUE, message = F, warning = F}
 # Load and view the data
-members <- read.csv("Zacharies_Karate_Club.csv")
-edges <- read.csv("Zacharies_Karate_Club_edges.csv")
+members <- read.csv("./data/Network_Analysis/Zacharies_Karate_Club.csv")
+edges <- read.csv("./data/Network_Analysis/Zacharies_Karate_Club_edges.csv")
 
 # Extract information for nodes
 nodes <- members$node
