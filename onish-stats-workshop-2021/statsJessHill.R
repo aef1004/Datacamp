@@ -43,6 +43,7 @@ plot(one.way)
 plot(two.way)
 plot(two.way_interaction)
 
+
 par(mfrow=c(2,2))
 plot(two.way)
 par(mfrow=c(1,1))
