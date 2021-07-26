@@ -1,0 +1,49 @@
+---
+title: "SQL"
+author: "Amy Fox"
+date: "7/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+https://www.hackerearth.com/blog/developers/exclusive-sql-tutorial-on-data-analysis-in-r/
+
+```{r}
+install.packages("babynames")
+install.packages("sqldf")
+```
+tcltk
+```{r}
+library(babynames)
+library(sqldf)
+```
+
+```{r}
+babynames
+
+sqldf("SELECT * FROM babynames")
+
+sqldf("SELECT count(*) FROM babynames")
+sqldf("SELECT count(*) AS num_rows FROM babynames")
+
+sqldf("SELECT * FROM babynames ORDER BY year desc, name")
+
+sqldf("SELECT year, sex, name  FROM babynames WHERE prop >0.05")
+sqldf("SELECT year, sex, name  FROM babynames WHERE prop >0.05 limit 20")
+sqldf("SELECT year, sex AS gender, name AS p FROM babynames WHERE prop >0.05 limit 20")
+sqldf("SELECT year, sex, name  FROM babynames WHERE prop >0.05 OR sex != 'F' limit 20")
+
+
+sqldf("SELECT year, name FROM babynames WHERE name like 'man%'") # starts with man
+sqldf("SELECT year, name FROM babynames WHERE name like '%man'") # ends with man
+sqldf("SELECT year, name FROM babynames WHERE name like '%man%'") # contains man
+
+
+sqldf("SELECT year, name FROM babynames WHERE year BETWEEN 2000 AND 2010")
+sqldf("SELECT year, name FROM babynames WHERE year NOT BETWEEN 2000 AND 2010")
+sqldf("SELECT year, name FROM babynames WHERE name IN ('Emily', 'Hannah')")
+```
+
