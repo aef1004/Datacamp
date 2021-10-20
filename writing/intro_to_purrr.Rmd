@@ -1,0 +1,316 @@
+---
+title: "Intro_to_purrr"
+output: html_document
+---
+
+
+
+Foundations of Functional Programming with purrr
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Read in multiple files
+```{r}
+files <- list.files()
+
+map(files, read_csv)
+```
+
+Find the sum of each elemen of the bird_counts sum list
+
+Maybe the object must be a list?
+```{r}
+map(bird_counts, sum)
+```
+
+The function `map` iterates over a list
+
+`map` traditionally outputs a list
+
+This 
+```{r}
+map(survey_data, ~nrow(.x))
+```
+
+This will output a vector of numbers
+```{r}
+map_dbl(survey_data, ~nrow(.x))
+```
+
+This will output a vector of logicals
+```{r}
+map_lgl(survey_data, ~nrow(.x) == 14)
+```
+
+This will outputs a vector of characters - it will pull out the species names from a list
+```{r}
+map_chr(species_names, ~.x)
+```
+
+This will output a data frame
+```{r}
+suvey_rows <- data.frame(names = names(survey_data), rows = NA)
+
+survey_rows$rows <- map_dbl(survey_data, ~nrow(.x))
+
+survey_rows 
+```
+
+This outputs a list with the name of each movie as the list and the length inside the list
+The outputs are the same, but the second is better syntax to use - the .x denotes where the list element goes in the function, when we use ".x" we also have to put a "~" infront of the function
+```{r}
+map(wesanderson, length)
+map(wesanderson, ~length(x))
+```
+
+
+This outputs a dataframe with the number of colors as a column and the rownames as the wesanderson list
+```{r}
+data.frame(numcolors = map_dbl(wesanderson, ~length(.x)))
+```
+
+# Safely, Possibly, and Walk
+
+Can use the function `safely` to show you where errors occurred - when we pipe it into transpose, it will show where the error occurred, first
+
+Replace anything with an error with NA
+
+```{r}
+list(-10, 1, 10, 0) %>% 
+      map(safely(log, otherwise = NA_real_)) %>%
+    # Transpose the result
+      transpose()
+```
+
+pull out the height element and convert from inches to cm
+
+```{r}
+height_ft <- map(sw_people ,"height") %>% 
+  map(safely(function(x){
+    x * 0.0328084
+  }, quiet = FALSE)) %>% 
+transpose()
+```
+
+replace safely with possibly  - this will out put just the data and not the error messages
+
+
+```{r}
+list(-10, 1, 10, 0) %>% 
+      map(safely(function(x) {
+log(x)
+}
+, otherwise = NA_real_)) 
+```
+
+use walk() to make lists easier to read - removes double bracketing and makes data more compact
+
+
+```{r}
+Short_list <- list(-10, 1, 10)
+
+Short_list
+
+walk(short_list, print)
+```
+
+for plots, you can plot multiple iterations using the map function
+
+
+```{r}
+# Load the gap_split data
+data(gap_split)
+
+# Map over the first 10 elements of gap_split
+plots <- map2(gap_split[1:10], 
+              names(gap_split[1:10]), 
+              ~ ggplot(.x, aes(year, lifeExp)) + 
+                geom_line() +
+                labs(title = "Gap Split"))
+
+# Object name, then function name
+walk(plots, print)
+```
+
+
+Check if the list has names
+```{r}
+names(sw_films)
+
+# if no names, then can use 
+
+sw_films <- sw_films %>%
+  set_names(map_chr(sw_films, "title"))
+```
+
+These do the same thing
+```{r}
+# Name gh_users with the names of the users
+gh_users_named <- gh_users %>% 
+    set_names(map_chr(gh_users, "name"))
+
+# Check gh_repos structure
+str(gh_repos)
+
+# Name gh_repos with the names of the repo owner
+gh_repos_named <- gh_repos %>% 
+    map_chr(~ .[[1]]$owner$login) %>% 
+    set_names(gh_repos, .)
+```
+
+
+Sort and try to ask a quesiton
+```{r}
+# Determine who joined github first
+map_chr(gh_users, ~.x[["created_at"]]) %>%
+      set_names(map_chr(gh_users, "name")) %>%
+    sort()
+```
+
+GGplot and dataframes
+
+Pull out data to create 4 columns
+```{r}
+map_df(gh_users, `[`, 
+       c("login","name","followers","public_repos")) 
+```
+
+Pull out the title and character names and plot height of characters by film
+```{r}
+# Turn data into correct dataframe format
+film_by_character <- tibble(filmtitle = map_chr(sw_films, "title")) %>%
+    mutate(filmtitle, characters = map(sw_films, "characters")) %>%
+    unnest()
+
+# Pull out elements from sw_people
+sw_characters <- map_df(sw_people, `[`, c("height", "mass", "name", "url"))
+
+# Join the two new objects
+character_data <- inner_join(film_by_character, sw_characters, by = c("characters" = "url")) %>%
+    # Make sure the columns are numbers
+    mutate(height = as.numeric(height), mass = as.numeric(mass))
+
+# Plot the heights, faceted by film title
+ggplot(character_data, aes(x = height)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ filmtitle)
+```
+
+
+# Intermediate Functional Programming with purrr
+
+```{r}
+# we can use .x to refer to the first list and .y to refer to the second list
+map2(visits2016, visits2017, ~.x + .y)
+
+# this will do the same as above
+map2(visits2016, visits2017, ~..1 + ..2)
+
+# with more than 2 parameters
+pmap(list, ~..1 + ..2 + ..3)
+```
+
+You can use `as_mapper` to create lambda functions (basically functions that are not named)
+
+```{r}
+# these do the exact same thing, but the second is shorter to write
+round_mean <- function(x) {
+  round(mean(x))
+}
+
+round_mean <- as_mapper(~ round(mean(.x)))
+```
+
+
+Name lists
+```{r}
+month.abb <- c("Jan", "Feb", "Mar")
+
+all_visits <- list(visits2015, visits2016)
+
+map(all_visits, ~set_names(.x, month.abb))
+
+```
+
+Can use the `keep` function to extract elements that satisfy a condition (with a TRUE/FALSE)
+
+```{r}
+# which month has received more than3000 visits
+over_3000 <- keep(visits2016, ~sum(.x) > 3000)
+
+names(over_3000)
+
+# or
+
+limits <- as_mapper(~sum(.x) >3000)
+
+over_mapper(visits2016, limit)
+
+names(over_mapper)
+```
+
+or can use `discard` to remove elements that satisfy a condition
+
+Only keep parts that are factors 
+```{r}
+df_list <- list(iris, airquality) %>%
+  map(head)
+
+map(df_list, ~keep(.x, is.factor))
+```
+
+Predicates
+Basically means TRUE/FALSE data
+
+can use `every` function: does every element satisfy a condition?
+
+can use `some` function: do some of the elements satisfy a condition
+```{r}
+every(visits2016, is.numeric)
+# output is TRUE
+
+# is the mean of every month above 1000?
+every(visits2016, ~mean(.x) > 1000)
+# output is FALSE
+
+# is the mean of some of the months above 1000?
+some(visits2016, ~mean(.x) > 1000)
+# output is TRUE
+```
+
+`detect_index` will tell us the first element that satisfies a condition
+
+```{r}
+detect_index(visits2016, ~mean(.x) > 1000)
+```
+
+`detect` will show the actual elements (the values) 
+```{r}
+detect(visits2016, ~mean(.x) > 1000, .right = TRUE)
+```
+
+`has_element` will show if one element has a value of interest
+```{r}
+visits2016_mean <- map(visits2016, mean)
+
+# does one of the means = 981?
+has_element(visits2016_mean, 981)
+# output is: TRUE
+```
+
+
+```{r}
+# Create a threshold variable, set it to 160
+threshold <- 160
+
+# Create a mapper that tests if .x is over the defined threshold
+over_threshold <- as_mapper(~ .x > threshold)
+
+# Are all elements in every all_visits vectors over the defined threshold? 
+map(all_visits, ~ every(.x, over_threshold))
+
+# Are some elements in every all_visits vectors over the defined threshold? 
+map(all_visits, ~ some(.x, over_threshold))
+```
+
