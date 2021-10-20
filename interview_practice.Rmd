@@ -1,0 +1,121 @@
+---
+title: "interview practice"
+output: html_document
+---
+
+Questions: https://igotanoffer.com/blogs/tech/google-data-science-interview
+
+Really good questin: https://towardsdatascience.com/over-100-data-scientist-interview-questions-and-answers-c5a66186769a
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Write a function to generate N samples from a normal distribution and plot the histogram.
+
+```{r}
+x <- rnorm(100)
+hist(x)
+
+# what if we want integers - from uniform distribution
+y <- runif(100, min = 0, max = 100)
+hist(y)
+
+# binomial distrubtion (Bernoulli trial) aka flipipng a coin
+# n = number of observations we want to see ex. landing on heads
+# size = number of trials per observation
+# prob = probability of success for each observation
+
+# Bernoulli distribution
+# outcome of 10 coin flips
+rbinom(n = 10, size = 1, prob = 0.5)
+
+# Example outcome of 10 flips of 100 coins
+rbinom(n = 10, size = 100, prob = 0.5)
+
+
+# make 150 widgts per day, defective widgets must be reworke, 5% error rate, how many widgets do we need to fix each day this week
+rbinom(n = 7, size = 150, prob = 0.05)
+
+# as sample sizes rise, the binomial distribution will start to converge on the normal distribution
+```
+
+rbinom - gives approximate times that something will land on X
+dbinom - calculates the probabiliyt of getting X success on n binomial trials
+pbinom - if we want to calculate the probabiliyt of getting 5 heads OR LESS
+
+```{r}
+# fair coin, probability of getting 5 heads in 10 trials
+dbinom(x = 5, size = 10, prob = 0.5)
+# probabiliyt of getting 5 heads is under 25%
+```
+
+Poisson distribution - probability of a number in a fixed interval of time or space (discrete distribution)
+
+For instance, a call center receives an average of 180 calls per hour, 24 hours a day. The calls are independent; receiving one does not change the probability of when the next one will arrive. The number of calls received during any minute has a Poisson probability distribution: the most likely numbers are 2 and 3 but 1 and 4 are also likely and there is a small probability of it being as low as zero and a very small probability it could be 10. 
+
+
+Normal distribution
+- height
+- weight
+- IQ score
+
+# Statistics and Machine learning
+
+**1) In what situation would you consider mean over median?**
+
+Median over mean
+ - when you have outliers or skewed distribution
+
+Mean over median
+ - basis for many statistical tests (t-tests, standard deviation)
+
+**2) For sample size n, the margin of error is 3. How many more samples do we need to make the margin of error 0.3?**
+
+ME = CI * sqrt((sd^2)/n)
+
+3 = sqrt(1/n)
+9 = 1/n
+n = 1/9 = 0.111
+
+0.3 = sqrt(1/n)
+0.9 = 1/n
+n = 1.111
+
+10x the sample size
+
+3) If you have the numbers 0-100 and pick 2 random numbers, what is the probability that the first number is smaller than the 2nd number
+
+Question to ask
+ - are we assuming that we're only picking integers
+ - are they randomly picked
+ - are they picked with replacement
+ - 
+
+4) We have an app that shows photos to users, every photo has a 25% chance of being “bad” what’s the probability that you as a user sees 2 bad photos
+
+Questions
+- out of how many photos? or is it 2 bad photos in a row?
+
+**5) If we have n random number generations between 1 and 100 what is the probability of the same number coming up twice?**
+
+1/100 = 1% for first
+
+or we can calculate the probability that they do not come up twice
+
+with 2 numbers = 100/100* 99/100
+with 3 numbers = 100/100* 99/00* 98/100
+
+Probability of at least one number cmoing up twice = 1-(P not coming up twice)
+
+**3) What is the assumption of error in linear regression?**
+
+Linear regression null hypothesis
+H0: B1 = 0
+Ha: B1 != 0
+
+Other assumptions for linear regression
+ - relationship between x and y appears linear (scatterplot)
+ - there is not relationship between the residuals and the Y variable (plot residuals versus Y - points should be ranodmly scattered)
+ - residuals must be normally distributed (residuals must be approximately normally distriubred)
+ - variance of the residuals is the same for all values of x (residuals vs. fit plot - must appear as though there is no pattern)
